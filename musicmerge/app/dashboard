@@ -1,0 +1,229 @@
+"use client";
+
+import React from "react";
+
+type Song = {
+  title: string;
+  artist: string;
+  plays: number;
+  cover: string;
+};
+
+type Artist = {
+  name: string;
+  image: string;
+};
+
+type Playlist = {
+  name: string;
+  image: string;
+  count: number;
+};
+
+type PlatformData = {
+  connected: boolean;
+  playlists: Playlist[];
+  topSongs: Song[];
+  topArtists: Artist[];
+};
+
+const dummyData: Record<string, PlatformData> = {
+  spotify: {
+    connected: true,
+    playlists: [
+      { name: "Chill Vibes", image: "/cover1.jpg", count: 42 },
+      { name: "Gym", image: "/cover2.jpg", count: 30 },
+    ],
+    topSongs: [
+      { title: "Song A", artist: "Artist X", plays: 120, cover: "/cover1.jpg" },
+      { title: "Song B", artist: "Artist Y", plays: 95, cover: "/cover2.jpg" },
+    ],
+    topArtists: [
+      { name: "Drake", image: "/artist1.jpg" },
+      { name: "Travis Scott", image: "/artist2.jpg" },
+    ],
+  },
+  apple: {
+    connected: true,
+    playlists: [
+      { name: "Focus", image: "/cover3.jpg", count: 20 },
+    ],
+    topSongs: [
+      { title: "Song C", artist: "Artist Z", plays: 80, cover: "/cover3.jpg" },
+    ],
+    topArtists: [
+      { name: "Kanye West", image: "/artist3.jpg" },
+    ],
+  },
+  youtube: {
+    connected: false,
+    playlists: [],
+    topSongs: [],
+    topArtists: [],
+  },
+};
+
+export default function Dashboard() {
+  const platforms = ["spotify", "apple", "youtube"];
+
+  const allSongs = platforms.flatMap((p) =>
+    dummyData[p].connected ? dummyData[p].topSongs : []
+  );
+
+  const allArtists = platforms.flatMap((p) =>
+    dummyData[p].connected ? dummyData[p].topArtists : []
+  );
+
+  const topSongs = [...allSongs]
+    .sort((a, b) => b.plays - a.plays)
+    .slice(0, 5);
+
+  const topArtists = allArtists.slice(0, 5);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-black text-white p-6">
+      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+
+      {/* Aggregate Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Card title="Total Songs" value={allSongs.length} />
+        <Card title="Total Artists" value={allArtists.length} />
+        <Card title="Top Platform" value="Spotify" />
+        <Card title="Total Plays" value={allSongs.reduce((a, b) => a + b.plays, 0)} />
+      </div>
+
+      {/* Aggregate Top Songs */}
+      <Section title="Top Songs (All Platforms)">
+        <div className="flex gap-4 overflow-x-auto">
+          {topSongs.map((song, i) => (
+            <SongCard key={i} song={song} />
+          ))}
+        </div>
+      </Section>
+
+      {/* Aggregate Top Artists */}
+      <Section title="Top Artists (All Platforms)">
+        <div className="flex gap-6">
+          {topArtists.map((artist, i) => (
+            <div key={i} className="text-center">
+              <img
+                src={artist.image}
+                className="w-16 h-16 rounded-full mb-2"
+              />
+              <p className="text-sm">{artist.name}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* Platform Sections */}
+      {platforms.map((platform) => (
+        <PlatformSection
+          key={platform}
+          name={platform}
+          data={dummyData[platform]}
+        />
+      ))}
+    </div>
+  );
+}
+
+
+function Card({ title, value }: { title: string; value: any }) {
+  return (
+    <div className="bg-white/10 backdrop-blur-md rounded-xl p-4">
+      <p className="text-sm text-gray-300">{title}</p>
+      <p className="text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-xl font-semibold mb-3">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function SongCard({ song }: { song: Song }) {
+  return (
+    <div className="bg-white/10 rounded-xl p-3 min-w-[150px]">
+      <img src={song.cover} className="rounded mb-2" />
+      <p className="text-sm font-semibold">{song.title}</p>
+      <p className="text-xs text-gray-400">{song.artist}</p>
+      <p className="text-xs text-green-400">{song.plays} plays</p>
+    </div>
+  );
+}
+
+function PlatformSection({
+  name,
+  data,
+}: {
+  name: string;
+  data: PlatformData;
+}) {
+  return (
+    <div className="mb-10">
+      <h2 className="text-2xl font-bold capitalize mb-4">{name}</h2>
+
+      {!data.connected ? (
+        <div className="bg-white/10 p-6 rounded-xl text-center">
+          <p className="mb-4">Connect {name} to see your data</p>
+          <button className="bg-green-500 px-4 py-2 rounded">
+            Connect
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Playlists */}
+          <Section title="Playlists">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {data.playlists.map((p, i) => (
+                <div key={i} className="bg-white/10 p-3 rounded-xl">
+                  <img src={p.image} className="rounded mb-2" />
+                  <p className="text-sm">{p.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {p.count} songs
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          {/* Top Songs */}
+          <Section title="Top Songs">
+            <div className="flex gap-4">
+              {data.topSongs.map((song, i) => (
+                <SongCard key={i} song={song} />
+              ))}
+            </div>
+          </Section>
+
+          {/* Top Artists */}
+          <Section title="Top Artists">
+            <div className="flex gap-6">
+              {data.topArtists.map((artist, i) => (
+                <div key={i} className="text-center">
+                  <img
+                    src={artist.image}
+                    className="w-14 h-14 rounded-full mb-2"
+                  />
+                  <p className="text-sm">{artist.name}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        </>
+      )}
+    </div>
+  );
+}
