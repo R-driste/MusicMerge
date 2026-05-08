@@ -76,7 +76,7 @@ export function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-white">
-              <Image src="/assets/Logo.png" alt="Logo" width={70} height={70} />
+              <Image src="public/logo.png" alt="Logo" width={100} height={100} />
             </Link>
           </div>
 
