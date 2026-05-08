@@ -85,10 +85,10 @@ export function Navbar() {
             <Link href="/" className="text-white hover:text-gray-200">
               Home
             </Link>
-            <Link href="/about" className="text-white hover:text-gray-200">
+            <Link href="/home/about" className="text-white hover:text-gray-200">
               About
             </Link>
-            <Link href="/contact" className="text-white hover:text-gray-200">
+            <Link href="/home/contact" className="text-white hover:text-gray-200">
               Contact
             </Link>
 

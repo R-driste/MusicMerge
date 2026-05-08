@@ -16,7 +16,7 @@ const team = [
   { name: "Member 4", role: "Developer" },
 ];
 
-export default function AboutPage() {
+export default function ContactPage() {
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white px-6 py-20">
       <div className="max-w-4xl mx-auto space-y-24">
