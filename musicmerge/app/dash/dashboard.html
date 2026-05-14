@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StreamBridge — Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --sp:#1DB954; --sp-dim:#e8faf0; --sp-text:#0d7a38; --sp-dark:#159c44;
+  --ap:#fc3c44; --ap-dim:#fff0f0; --ap-text:#b82429;
+  --radius:12px; --border:1px solid #ebebeb;
+}
+
+body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f4f4f2;color:#111;min-height:100vh;}
+
+/* ── SHELL ── */
+.shell{display:flex;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:210px;flex-shrink:0;background:#111;
+  display:flex;flex-direction:column;padding:28px 0 16px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.logo{font-size:1rem;font-weight:800;letter-spacing:-.5px;padding:0 18px 24px;color:#fff;}
+.logo span{color:var(--sp);}
+.sb-section{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#444;padding:0 18px 6px;margin-top:4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:.8rem;font-weight:600;color:#777;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:color .1s,background .1s;}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.05);}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.08);}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:#333;flex-shrink:0;}
+.nav-item.active .nav-dot{background:var(--sp);}
+.sb-spacer{flex:1;}
+
+/* ── SIDEBAR AUTH ── */
+.sb-auth{padding:10px;display:flex;flex-direction:column;gap:6px;}
+.sa-card{background:rgba(255,255,255,.06);border-radius:8px;padding:9px 11px;display:flex;align-items:center;gap:8px;}
+.sa-card.on-sp{background:rgba(29,185,84,.15);border:1px solid rgba(29,185,84,.3);}
+.sa-card.on-ap{background:rgba(252,60,68,.15);border:1px solid rgba(252,60,68,.3);}
+.sa-dot{width:7px;height:7px;border-radius:50%;background:#333;flex-shrink:0;}
+.sa-dot.sp{background:var(--sp);} .sa-dot.ap{background:var(--ap);}
+.sa-info{flex:1;min-width:0;}
+.sa-name{font-size:10px;font-weight:700;color:#bbb;}
+.sa-user{font-size:9px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sa-btn{font-size:9px;font-weight:800;padding:4px 8px;border-radius:4px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.sa-btn:disabled{opacity:.4;cursor:not-allowed;}
+.sa-btn.sp{background:var(--sp);color:#000;} .sa-btn.sp:hover:not(:disabled){background:var(--sp-dark);}
+.sa-btn.ap{background:var(--ap);color:#fff;} .sa-btn.ap:hover:not(:disabled){background:#d42b32;}
+.sa-btn.off{background:#2a2a2a;color:#777;} .sa-btn.off:hover{background:#333;color:#aaa;}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;padding:28px 24px;overflow:auto;}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:22px;}
+.page-title{font-size:1.4rem;font-weight:800;letter-spacing:-.5px;}
+.page-sub{font-size:.8rem;color:#999;margin-top:3px;}
+
+/* ── TIME RANGE ── */
+.time-toggle{display:inline-flex;background:#e4e4e2;border-radius:7px;padding:3px;gap:2px;}
+.time-btn{font-size:11px;font-weight:700;padding:5px 11px;border-radius:5px;border:none;background:none;color:#888;cursor:pointer;}
+.time-btn.active{background:#fff;color:#111;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* ── PLATFORM COLUMNS ── */
+.platforms{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+
+/* ── PLATFORM HEADER ── */
+.platform-col{}
+.platform-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-radius:var(--radius) var(--radius) 0 0;
+  margin-bottom:0;
+}
+.ph-sp{background:var(--sp);}
+.ph-ap{background:var(--ap);}
+.ph-name{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:-.3px;}
+.ph-user{font-size:.75rem;color:rgba(255,255,255,.7);margin-top:2px;}
+.ph-connect-btn{font-size:.75rem;font-weight:700;padding:7px 14px;border-radius:6px;border:none;cursor:pointer;white-space:nowrap;}
+.ph-connect-sp{background:#fff;color:#000;} .ph-connect-sp:hover{background:#f0f0f0;}
+.ph-connect-ap{background:#fff;color:#b82429;} .ph-connect-ap:hover{background:#f0f0f0;}
+.ph-disconnect{background:rgba(255,255,255,.2);color:#fff;} .ph-disconnect:hover{background:rgba(255,255,255,.3);}
+
+/* ── STAT ROW ── */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.stat-card{background:#fff;border:var(--border);border-radius:10px;padding:12px 14px;}
+.stat-card.sp-accent{border-top:3px solid var(--sp);}
+.stat-card.ap-accent{border-top:3px solid var(--ap);}
+.sc-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#aaa;font-weight:700;margin-bottom:4px;}
+.sc-value{font-size:1.3rem;font-weight:800;letter-spacing:-.5px;line-height:1;}
+.sc-sub{font-size:10px;color:#bbb;margin-top:3px;}
+
+/* ── NOW PLAYING ── */
+.now-playing{
+  background:#111;border-radius:10px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;margin-bottom:10px;color:#fff;
+}
+.np-cover{width:50px;height:50px;border-radius:7px;object-fit:cover;flex-shrink:0;background:#222;}
+.np-ph{width:50px;height:50px;border-radius:7px;background:#1e1e1e;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.np-info{flex:1;min-width:0;}
+.np-label{font-size:9px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+.np-label.live{color:var(--sp);}
+.np-name{font-size:.85rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.np-artist{font-size:.72rem;color:#aaa;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.np-pop{font-size:11px;color:#555;flex-shrink:0;}
+
+/* ── PANEL ── */
+.panel{background:#fff;border:var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:var(--border);}
+.panel-title{font-size:.8rem;font-weight:800;letter-spacing:-.2px;}
+.panel-meta{font-size:10px;color:#bbb;}
+
+/* ── SECTION DIVIDER ── */
+.sec-divider{
+  display:flex;align-items:center;gap:10px;
+  font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:#bbb;
+  margin:18px 0 10px;
+}
+.sec-divider::before,.sec-divider::after{content:'';flex:1;height:1px;background:#e8e8e8;}
+
+/* ── TRACK ITEMS ── */
+.track-item{display:flex;align-items:center;gap:10px;padding:8px 16px;transition:background .1s;}
+.track-item:hover{background:#fafafa;}
+.t-rank{font-size:11px;font-weight:800;color:#ddd;min-width:16px;text-align:right;}
+.t-rank.top{color:#111;}
+.t-cover{width:34px;height:34px;border-radius:5px;object-fit:cover;flex-shrink:0;background:#eee;}
+.t-ph{width:34px;height:34px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;}
+.t-info{flex:1;min-width:0;}
+.t-name{font-size:.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-artist{font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.t-pop-bar{height:2px;background:#eee;border-radius:1px;margin-top:4px;}
+.t-pop-fill{height:100%;border-radius:1px;}
+.t-dur{font-size:10px;color:#ccc;white-space:nowrap;flex-shrink:0;}
+.t-exp{font-size:8px;font-weight:800;background:#eee;color:#888;padding:1px 3px;border-radius:2px;margin-left:3px;vertical-align:middle;}
+
+/* ── ARTIST ITEMS ── */
+.artist-item{display:flex;align-items:center;gap:10px;padding:8px 16px;transition:background .1s;}
+.artist-item:hover{background:#fafafa;}
+.a-img{width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#eee;}
+.a-ph{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;}
+.a-info{flex:1;min-width:0;}
+.a-name{font-size:.78rem;font-weight:700;}
+.a-genres{font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.a-pop{font-size:10px;color:#bbb;white-space:nowrap;}
+
+/* ── RECENT ITEMS ── */
+.recent-item{display:flex;align-items:center;gap:10px;padding:7px 16px;transition:background .1s;}
+.recent-item:hover{background:#fafafa;}
+.r-cover{width:30px;height:30px;border-radius:4px;object-fit:cover;flex-shrink:0;background:#eee;}
+.r-info{flex:1;min-width:0;}
+.r-name{font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.r-artist{font-size:10px;color:#aaa;}
+.r-time{font-size:10px;color:#ccc;flex-shrink:0;}
+
+/* ── GENRE PIE ── */
+.genre-wrap{display:flex;gap:16px;padding:14px 16px;align-items:flex-start;}
+.genre-legend{flex:1;min-width:0;}
+.genre-row{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #f5f5f5;}
+.genre-row:last-child{border:none;}
+.g-swatch{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.g-label{font-size:.72rem;font-weight:700;flex:1;}
+.g-pct{font-size:10px;color:#aaa;}
+
+/* ── AUDIO FEATURES ── */
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;padding:12px 16px;gap:0;}
+.feat-row{padding:7px 0;border-bottom:1px solid #f5f5f5;}
+.feat-row:nth-child(odd){padding-right:14px;border-right:1px solid #f5f5f5;}
+.feat-row:nth-child(even){padding-left:14px;}
+.feat-name{font-size:9px;color:#bbb;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.feat-bar{height:4px;background:#eee;border-radius:2px;}
+.feat-fill{height:100%;border-radius:2px;}
+.feat-val{font-size:10px;color:#999;margin-top:3px;}
+
+/* ── DECADES ── */
+.dec-row{display:flex;align-items:center;gap:8px;padding:6px 16px;}
+.dec-label{font-size:10px;font-weight:700;color:#888;min-width:32px;}
+.dec-bg{flex:1;height:5px;background:#eee;border-radius:3px;overflow:hidden;}
+.dec-fill{height:100%;border-radius:3px;}
+.dec-count{font-size:10px;color:#bbb;min-width:20px;text-align:right;}
+
+/* ── FOLLOWED CHIPS ── */
+.chip-wrap{display:flex;flex-wrap:wrap;gap:5px;padding:12px 16px;}
+.chip{font-size:10px;font-weight:700;padding:4px 10px;border-radius:100px;background:#f3f3f3;color:#333;display:flex;align-items:center;gap:5px;}
+.chip img{width:18px;height:18px;border-radius:50%;object-fit:cover;}
+.chip-ph{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0;}
+
+/* ── ALBUMS ── */
+.album-item{display:flex;align-items:center;gap:10px;padding:8px 16px;transition:background .1s;}
+.album-item:hover{background:#fafafa;}
+.alb-cover{width:38px;height:38px;border-radius:5px;object-fit:cover;flex-shrink:0;background:#eee;}
+.alb-info{flex:1;min-width:0;}
+.alb-name{font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.alb-artist{font-size:10px;color:#aaa;}
+.alb-year{font-size:10px;color:#ccc;flex-shrink:0;}
+
+/* ── PLAYLISTS ── */
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;padding:14px;}
+.pl-card{cursor:pointer;}
+.pl-thumb{width:100%;aspect-ratio:1;border-radius:7px;object-fit:cover;display:block;margin-bottom:6px;background:#eee;}
+.pl-ph{width:100%;aspect-ratio:1;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:6px;}
+.pl-name{font-size:.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-meta{font-size:9px;color:#aaa;margin-top:2px;}
+
+/* ── CONNECT PROMPT ── */
+.connect-state{padding:28px 16px;text-align:center;}
+.cs-icon{font-size:32px;margin-bottom:10px;}
+.cs-title{font-size:.85rem;font-weight:700;color:#888;margin-bottom:6px;}
+.cs-sub{font-size:.75rem;color:#bbb;margin-bottom:14px;}
+.cs-btn{font-size:.78rem;font-weight:700;padding:9px 18px;border-radius:7px;border:none;cursor:pointer;}
+.cs-btn.sp{background:var(--sp);color:#000;} .cs-btn.sp:hover{background:var(--sp-dark);}
+.cs-btn.ap{background:var(--ap);color:#fff;} .cs-btn.ap:hover{background:#d42b32;}
+
+/* ── SPINNER / EMPTY ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #ddd;border-top-color:#888;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{padding:20px 16px;text-align:center;color:#ccc;font-size:.78rem;}
+
+/* ── HR ── */
+hr.div{border:none;border-top:var(--border);margin:0;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
+  .platforms{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .main{padding:16px;}
+}
+@media(max-width:600px){
+  .stat-row{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">Merg<span>ically</span></div>
+  <div class="sb-section">Menu</div>
+  <button class="nav-item active"><span class="nav-dot"></span>Dashboard</button>
+  <button class="nav-item"><span class="nav-dot"></span>Convert</button>
+  <button class="nav-item"><span class="nav-dot"></span>History</button>
+  <button class="nav-item"><span class="nav-dot"></span>Settings</button>
+  <div class="sb-spacer"></div>
+  <div class="sb-section">Connections</div>
+  <div class="sb-auth">
+    <div class="sa-card" id="sc-sp">
+      <div class="sa-dot" id="dot-sp"></div>
+      <div class="sa-info"><div class="sa-name">Spotify</div><div class="sa-user" id="user-sp">Not connected</div></div>
+      <button class="sa-btn sp" id="btn-sp" onclick="spotifyLogin()">Connect</button>
+    </div>
+    <div class="sa-card" id="sc-ap">
+      <div class="sa-dot" id="dot-ap"></div>
+      <div class="sa-info"><div class="sa-name">Apple Music</div><div class="sa-user" id="user-ap">Not connected</div></div>
+      <button class="sa-btn ap" id="btn-ap" onclick="connectApple()">Connect</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+    <div class="page-header">
+      <div class="page-title">Music Dashboard</div>
+      <div class="page-sub">Your listening data across platforms, side by side.</div>
+    </div>
+    <div class="time-toggle" id="time-toggle">
+      <button class="time-btn active" onclick="setRange('short_term',this)">4 weeks</button>
+      <button class="time-btn" onclick="setRange('medium_term',this)">6 months</button>
+      <button class="time-btn" onclick="setRange('long_term',this)">All time</button>
+    </div>
+  </div>
+
+  <div class="platforms">
+
+    <!-- ══ SPOTIFY COLUMN ══ -->
+    <div class="platform-col" id="sp-col">
+
+      <!-- Header -->
+      <div class="platform-header ph-sp" style="border-radius:12px 12px 0 0;">
+        <div>
+          <div class="ph-name">Spotify</div>
+          <div class="ph-user" id="sp-ph-user">Not connected</div>
+        </div>
+        <button class="ph-connect-btn ph-connect-sp" id="sp-col-btn" onclick="spotifyLogin()">Connect</button>
+      </div>
+
+      <div id="sp-content" style="border:var(--border);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
+
+        <!-- Connect state -->
+        <div class="connect-state" id="sp-connect-state">
+          <div class="cs-icon">🎵</div>
+          <div class="cs-title">Connect Spotify</div>
+          <div class="cs-sub">See your top tracks, artists, genres, playlists and more.</div>
+          <button class="cs-btn sp" onclick="spotifyLogin()">Connect with Spotify</button>
+        </div>
+
+        <!-- Data (hidden until connected) -->
+        <div id="sp-data" style="display:none;">
+
+          <!-- Stats -->
+          <div style="padding:14px 16px 0;">
+            <div class="stat-row">
+              <div class="stat-card sp-accent"><div class="sc-label">Playlists</div><div class="sc-value" id="sp-s-pl">—</div><div class="sc-sub">saved</div></div>
+              <div class="stat-card"><div class="sc-label">Followers</div><div class="sc-value" id="sp-s-fw">—</div><div class="sc-sub">on Spotify</div></div>
+              <div class="stat-card"><div class="sc-label">Top Genre</div><div class="sc-value" id="sp-s-tg" style="font-size:.8rem;padding-top:4px;">—</div><div class="sc-sub">this period</div></div>
+            </div>
+          </div>
+
+          <!-- Now Playing -->
+          <div style="padding:0 16px 14px;">
+            <div class="now-playing" id="sp-np"><div class="np-ph">🎵</div><div class="np-info"><div class="np-label">Loading…</div></div></div>
+          </div>
+
+          <!-- Top Tracks -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Top Tracks</span><span class="panel-meta" id="sp-tt-meta">—</span></div>
+            <div id="sp-tt"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Top Artists -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Top Artists</span><span class="panel-meta" id="sp-ta-meta">—</span></div>
+            <div id="sp-ta"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Genre Pie -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Genre Breakdown</span><span class="panel-meta" id="sp-genre-meta">—</span></div>
+            <div class="genre-wrap">
+              <canvas id="sp-pie" width="120" height="120" style="flex-shrink:0;"></canvas>
+              <div class="genre-legend" id="sp-genre-legend"><div class="empty" style="padding:6px 0;">Loading…</div></div>
+            </div>
+          </div>
+
+          <!-- Audio Features -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Audio Features</span><span class="panel-meta">Avg from top tracks</span></div>
+            <div class="feat-grid" id="sp-feats"><div class="empty" style="grid-column:1/-1;">Loading…</div></div>
+          </div>
+
+          <!-- Decades -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Music by Decade</span><span class="panel-meta">Top tracks</span></div>
+            <div id="sp-dec" style="padding:8px 0 4px;"><div class="empty">Loading…</div></div>
+          </div>
+
+          <!-- Recently Played -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Recently Played</span><span class="panel-meta">Last 20</span></div>
+            <div id="sp-rp"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Followed Artists -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Followed Artists</span><span class="panel-meta" id="sp-fol-meta">—</span></div>
+            <div id="sp-fol"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Saved Albums -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Saved Albums</span><span class="panel-meta" id="sp-alb-meta">—</span></div>
+            <div id="sp-alb"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Playlists -->
+          <div class="panel" style="margin:0 16px 14px;">
+            <div class="panel-header"><span class="panel-title">All Playlists</span><span class="panel-meta" id="sp-pl-meta">—</span></div>
+            <div id="sp-pl"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+        </div><!-- /sp-data -->
+      </div>
+    </div><!-- /sp-col -->
+
+    <!-- ══ APPLE MUSIC COLUMN ══ -->
+    <div class="platform-col" id="ap-col">
+
+      <!-- Header -->
+      <div class="platform-header ph-ap" style="border-radius:12px 12px 0 0;">
+        <div>
+          <div class="ph-name">Apple Music</div>
+          <div class="ph-user" id="ap-ph-user">Not connected</div>
+        </div>
+        <button class="ph-connect-btn ph-connect-ap" id="ap-col-btn" onclick="connectApple()">Connect</button>
+      </div>
+
+      <div id="ap-content" style="border:var(--border);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
+
+        <!-- Connect state -->
+        <div class="connect-state" id="ap-connect-state">
+          <div class="cs-icon">🎶</div>
+          <div class="cs-title">Connect Apple Music</div>
+          <div class="cs-sub">See your library, playlists, and recently played tracks.</div>
+          <button class="cs-btn ap" onclick="connectApple()">Connect with Apple Music</button>
+        </div>
+
+        <!-- Data -->
+        <div id="ap-data" style="display:none;">
+
+          <!-- Stats -->
+          <div style="padding:14px 16px 0;">
+            <div class="stat-row">
+              <div class="stat-card ap-accent"><div class="sc-label">Playlists</div><div class="sc-value" id="ap-s-pl">—</div><div class="sc-sub">in library</div></div>
+              <div class="stat-card"><div class="sc-label">Artists</div><div class="sc-value" id="ap-s-ar">—</div><div class="sc-sub">in library</div></div>
+              <div class="stat-card"><div class="sc-label">Albums</div><div class="sc-value" id="ap-s-al">—</div><div class="sc-sub">in library</div></div>
+            </div>
+          </div>
+
+          <!-- Recently Played -->
+          <div style="padding:0 16px 10px;">
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Recently Played</span><span class="panel-meta">Last 10</span></div>
+              <div id="ap-rp"><div class="empty"><span class="spinner"></span></div></div>
+            </div>
+          </div>
+
+          <!-- Top Tracks (library) -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Library Songs</span><span class="panel-meta" id="ap-tt-meta">—</span></div>
+            <div id="ap-tt"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Top Artists (library) -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Library Artists</span><span class="panel-meta" id="ap-ta-meta">—</span></div>
+            <div id="ap-ta"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Genre Pie (Apple) -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Genre Breakdown</span><span class="panel-meta" id="ap-genre-meta">—</span></div>
+            <div class="genre-wrap">
+              <canvas id="ap-pie" width="120" height="120" style="flex-shrink:0;"></canvas>
+              <div class="genre-legend" id="ap-genre-legend"><div class="empty" style="padding:6px 0;">Loading…</div></div>
+            </div>
+          </div>
+
+          <!-- Saved Albums -->
+          <div class="panel" style="margin:0 16px 10px;">
+            <div class="panel-header"><span class="panel-title">Library Albums</span><span class="panel-meta" id="ap-alb-meta">—</span></div>
+            <div id="ap-alb"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+          <!-- Playlists -->
+          <div class="panel" style="margin:0 16px 14px;">
+            <div class="panel-header"><span class="panel-title">All Playlists</span><span class="panel-meta" id="ap-pl-meta">—</span></div>
+            <div id="ap-pl"><div class="empty"><span class="spinner"></span></div></div>
+          </div>
+
+        </div><!-- /ap-data -->
+      </div>
+    </div><!-- /ap-col -->
+
+  </div><!-- /platforms -->
+</main>
+</div>
+
+<script>
+const CONFIG={
+  spotify:{
+    clientId:'a8d1a180675c42ccbead39e3f0ca87e2',
+    redirectUri:window.location.origin+window.location.pathname,
+    scopes:[
+      'user-top-read','user-read-private','user-read-email',
+      'user-read-recently-played','user-read-playback-state',
+      'user-read-currently-playing','user-follow-read',
+      'user-library-read','playlist-read-private','playlist-read-collaborative'
+    ].join(' ')
+  },
+  apple:{
+    developerToken:'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijg2UzZCWjk1SkEifQ.eyJpYXQiOjE3Nzc5MDk4NjIsImV4cCI6MTc5MzQ2MTg2MiwiaXNzIjoiTjRBUDg2NzNLTiJ9.wk7O4VDIS4qaktpD9oP42palE2Z_7R3j7NUlG9K2Jk5SNq2-h5wZyn5j4L99gg3qoqA_1vZsTo6aIL-gNk-2IQ',
+    appName:'StreamBridge',appBuild:'1.0'
+  }
+};
+
+const PAL=['#1DB954','#fc3c44','#f59e0b','#6366f1','#14b8a6','#f97316','#e879f9','#60a5fa','#a3e635','#fb7185'];
+const SP_PAL=['#1DB954','#17a349','#0d8c3e','#23d45e','#3de87a','#57f591','#71f9a5','#8efcb8','#aafec9','#c5ffd9'];
+const AP_PAL=['#fc3c44','#e03038','#c4242c','#ff5259','#ff6b70','#ff8387','#ff9b9e','#ffb4b6','#ffcbcc','#ffe0e1'];
+
+const ST={spToken:null,spConnected:false,spRange:'short_term',spTopTracks:[],spTopArtists:[],apMusic:null,apConnected:false};
+
+const $=id=>document.getElementById(id);
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmt(n){if(n==null)return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function ago(iso){const d=Date.now()-new Date(iso).getTime(),m=Math.floor(d/6e4);if(m<1)return'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+function ms2min(ms){if(!ms)return'—';const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function hr(){return'<hr class="div"/>';}
+
+// ── PKCE ──
+async function genPKCE(){
+  const a=new Uint8Array(32);crypto.getRandomValues(a);
+  const v=btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));
+  const c=btoa(String.fromCharCode(...new Uint8Array(h))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  return{verifier:v,challenge:c};
+}
+async function spotifyLogin(){
+  const{verifier,challenge}=await genPKCE();
+  sessionStorage.setItem('sp_verifier',verifier);
+  const p=new URLSearchParams({response_type:'code',client_id:CONFIG.spotify.clientId,scope:CONFIG.spotify.scopes,redirect_uri:CONFIG.spotify.redirectUri,code_challenge_method:'S256',code_challenge:challenge,state:'sp_dash'});
+  window.location.href='https://accounts.spotify.com/authorize?'+p;
+}
+
+// ── SPOTIFY FETCH ──
+async function spFetch(path){
+  const res=await fetch('https://api.spotify.com/v1'+path,{headers:{Authorization:'Bearer '+ST.spToken}});
+  if(res.status===429){await sleep((+res.headers.get('Retry-After')||2)*1000);return spFetch(path);}
+  if(res.status===204)return{};
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||'Error '+res.status);}
+  return res.json().catch(()=>({}));
+}
+
+// ── SPOTIFY SIDEBAR UI ──
+function setSpSidebarUI(s,user){
+  const card=$('sc-sp'),dot=$('dot-sp'),uEl=$('user-sp'),btn=$('btn-sp');
+  if(s==='connected'){
+    card.className='sa-card on-sp';dot.className='sa-dot sp';
+    uEl.textContent=user?.display_name||user?.email||'Spotify User';
+    btn.textContent='Disconnect';btn.className='sa-btn off';btn.onclick=dcSpotify;btn.disabled=false;
+  }else if(s==='loading'){
+    dot.className='sa-dot';uEl.textContent='Connecting…';btn.disabled=true;btn.textContent='…';
+  }else{
+    card.className='sa-card';dot.className='sa-dot';uEl.textContent='Not connected';
+    btn.disabled=false;btn.textContent='Connect';btn.className='sa-btn sp';btn.onclick=spotifyLogin;
+  }
+}
+
+// ── SPOTIFY COLUMN UI ──
+function showSpData(){
+  $('sp-connect-state').style.display='none';
+  $('sp-data').style.display='block';
+}
+function showSpConnect(){
+  $('sp-connect-state').style.display='';
+  $('sp-data').style.display='none';
+}
+function setSpColBtn(connected){
+  const btn=$('sp-col-btn');
+  if(connected){btn.textContent='Disconnect';btn.className='ph-connect-btn ph-disconnect';btn.onclick=dcSpotify;}
+  else{btn.textContent='Connect';btn.className='ph-connect-btn ph-connect-sp';btn.onclick=spotifyLogin;}
+}
+
+function dcSpotify(){
+  sessionStorage.removeItem('sp_token');
+  ST.spToken=null;ST.spConnected=false;ST.spTopTracks=[];ST.spTopArtists=[];
+  setSpSidebarUI('disconnected');setSpColBtn(false);
+  $('sp-ph-user').textContent='Not connected';
+  showSpConnect();
+}
+
+// ── TIME RANGE ──
+function setRange(r,btn){
+  ST.spRange=r;
+  document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(ST.spConnected){spLoadTT();spLoadTA();}
+}
+
+// ── SPOTIFY CONNECT ──
+async function setSpotifyConnected(token){
+  ST.spToken=token;ST.spConnected=true;setSpSidebarUI('loading');
+  try{
+    const me=await spFetch('/me');
+    setSpSidebarUI('connected',me);
+    $('sp-ph-user').textContent=me.display_name||me.email||'';
+    $('sp-s-fw').textContent=fmt(me.followers?.total);
+    setSpColBtn(true);showSpData();
+    await Promise.all([spLoadNP(),spLoadTT(),spLoadTA(),spLoadRec(),spLoadFollowed(),spLoadAlbums(),spLoadPlaylists()]);
+  }catch(e){console.error(e);setSpSidebarUI('disconnected');}
+}
+
+// ── NOW PLAYING ──
+async function spLoadNP(){
+  const el=$('sp-np');
+  try{
+    const d=await spFetch('/me/player/currently-playing');
+    if(d&&d.item){renderNP(el,d.item,d.is_playing,null);return;}
+    const rp=await spFetch('/me/player/recently-played?limit=1');
+    const t=rp.items?.[0]?.track;
+    if(t)renderNP(el,t,false,rp.items[0].played_at);
+    else el.innerHTML='<div class="np-ph">🎵</div><div class="np-info"><div class="np-label">No recent activity</div></div>';
+  }catch{el.innerHTML='<div class="np-ph">🎵</div><div class="np-info"><div class="np-label">No active session</div></div>';}
+}
+function renderNP(el,t,playing,playedAt){
+  const img=t.album?.images?.[0]?.url;
+  const label=playing?'Now Playing':playedAt?'Last played · '+ago(playedAt):'Paused';
+  el.innerHTML=`
+    ${img?`<img class="np-cover" src="${esc(img)}" alt=""/>`:'<div class="np-ph">🎵</div>'}
+    <div class="np-info">
+      <div class="np-label ${playing?'live':''}">${playing?'▶ ':''}${esc(label)}</div>
+      <div class="np-name">${esc(t.name)}</div>
+      <div class="np-artist">${esc(t.artists?.map(a=>a.name).join(', '))}</div>
+    </div>
+    ${t.popularity!=null?`<div class="np-pop">${t.popularity}<br/><span style="font-size:9px;color:#444;">pop</span></div>`:''}
+  `;
+}
+
+// ── TOP TRACKS ──
+async function spLoadTT(){
+  $('sp-tt').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const d=await spFetch(`/me/top/tracks?limit=15&time_range=${ST.spRange}`);
+    ST.spTopTracks=d.items||[];
+    if(!ST.spTopTracks.length){$('sp-tt').innerHTML='<div class="empty">No data for this period.</div>';return;}
+    $('sp-tt-meta').textContent=`Top ${ST.spTopTracks.length}`;
+    const ids=ST.spTopTracks.map(t=>t.id).join(',');
+    const fd=await spFetch(`/audio-features?ids=${ids}`).catch(()=>({audio_features:[]}));
+    spBuildFeatures((fd.audio_features||[]).filter(Boolean));
+    spBuildDecades(ST.spTopTracks);
+    $('sp-tt').innerHTML=ST.spTopTracks.map((t,i)=>{
+      const img=t.album?.images?.[1]?.url||t.album?.images?.[0]?.url;
+      return`<div class="track-item">
+        <span class="t-rank ${i<3?'top':''}">${i+1}</span>
+        ${img?`<img class="t-cover" src="${esc(img)}" alt=""/>`:`<div class="t-ph" style="background:${SP_PAL[i%SP_PAL.length]}">${esc(t.name.charAt(0))}</div>`}
+        <div class="t-info">
+          <div class="t-name">${esc(t.name)}${t.explicit?'<span class="t-exp">E</span>':''}</div>
+          <div class="t-artist">${esc(t.artists?.map(a=>a.name).join(', '))} · ${esc(t.album?.name)}</div>
+          <div class="t-pop-bar"><div class="t-pop-fill" style="width:${t.popularity}%;background:var(--sp)"></div></div>
+        </div>
+        <div class="t-dur">${ms2min(t.duration_ms)}</div>
+      </div>${i<ST.spTopTracks.length-1?hr():''}`;
+    }).join('');
+  }catch(e){$('sp-tt').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── TOP ARTISTS ──
+async function spLoadTA(){
+  $('sp-ta').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const d=await spFetch(`/me/top/artists?limit=10&time_range=${ST.spRange}`);
+    ST.spTopArtists=d.items||[];
+    if(!ST.spTopArtists.length){$('sp-ta').innerHTML='<div class="empty">No data for this period.</div>';return;}
+    $('sp-ta-meta').textContent=`Top ${ST.spTopArtists.length}`;
+    spBuildGenrePie(ST.spTopArtists);
+    $('sp-ta').innerHTML=ST.spTopArtists.map((a,i)=>{
+      const img=a.images?.[1]?.url||a.images?.[0]?.url;
+      return`<div class="artist-item">
+        ${img?`<img class="a-img" src="${esc(img)}" alt=""/>`:`<div class="a-ph" style="background:${SP_PAL[i%SP_PAL.length]}">${esc(a.name.charAt(0))}</div>`}
+        <div class="a-info">
+          <div class="a-name">${esc(a.name)}</div>
+          <div class="a-genres">${(a.genres||[]).slice(0,3).map(esc).join(' · ')||'Unknown'}</div>
+        </div>
+        <div class="a-pop">${fmt(a.followers?.total)}</div>
+      </div>${i<ST.spTopArtists.length-1?hr():''}`;
+    }).join('');
+  }catch(e){$('sp-ta').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── RECENTLY PLAYED ──
+async function spLoadRec(){
+  $('sp-rp').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const d=await spFetch('/me/player/recently-played?limit=20');
+    const items=d.items||[];
+    if(!items.length){$('sp-rp').innerHTML='<div class="empty">No history.</div>';return;}
+    $('sp-rp').innerHTML=items.map(({track:t,played_at})=>{
+      const img=t.album?.images?.[2]?.url||t.album?.images?.[0]?.url;
+      return`<div class="recent-item">
+        ${img?`<img class="r-cover" src="${esc(img)}" alt=""/>`:'<div class="r-cover"></div>'}
+        <div class="r-info"><div class="r-name">${esc(t.name)}</div><div class="r-artist">${esc(t.artists?.map(a=>a.name).join(', '))}</div></div>
+        <div class="r-time">${ago(played_at)}</div>
+      </div>`;
+    }).join('');
+  }catch(e){$('sp-rp').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── FOLLOWED ──
+async function spLoadFollowed(){
+  $('sp-fol').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const d=await spFetch('/me/following?type=artist&limit=50');
+    const artists=d.artists?.items||[];
+    $('sp-fol-meta').textContent=`${artists.length} shown`;
+    if(!artists.length){$('sp-fol').innerHTML='<div class="empty">Not following any artists.</div>';return;}
+    $('sp-fol').innerHTML=`<div class="chip-wrap">${artists.map((a,i)=>{
+      const img=a.images?.[2]?.url||a.images?.[0]?.url;
+      return`<div class="chip">${img?`<img src="${esc(img)}" alt=""/>`:`<span class="chip-ph" style="background:${SP_PAL[i%SP_PAL.length]}">${esc(a.name.charAt(0))}</span>`}${esc(a.name)}</div>`;
+    }).join('')}</div>`;
+  }catch(e){$('sp-fol').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── SAVED ALBUMS ──
+async function spLoadAlbums(){
+  $('sp-alb').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const d=await spFetch('/me/albums?limit=15');
+    const items=d.items||[];
+    $('sp-alb-meta').textContent=`${d.total||items.length} total`;
+    if(!items.length){$('sp-alb').innerHTML='<div class="empty">No saved albums.</div>';return;}
+    $('sp-alb').innerHTML=items.map(({album:a})=>{
+      const img=a.images?.[1]?.url||a.images?.[0]?.url;
+      return`<div class="album-item">
+        ${img?`<img class="alb-cover" src="${esc(img)}" alt=""/>`:'<div class="alb-cover"></div>'}
+        <div class="alb-info"><div class="alb-name">${esc(a.name)}</div><div class="alb-artist">${esc(a.artists?.map(x=>x.name).join(', '))} · ${a.total_tracks} tracks</div></div>
+        <div class="alb-year">${a.release_date?.slice(0,4)||''}</div>
+      </div>${hr()}`;
+    }).join('');
+  }catch(e){$('sp-alb').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── PLAYLISTS ──
+async function spLoadPlaylists(){
+  $('sp-pl').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    let all=[],url='/me/playlists?limit=50';
+    while(url){const d=await spFetch(url);all=all.concat((d.items||[]).filter(p=>p?.name));url=d.next?d.next.replace('https://api.spotify.com/v1',''):null;}
+    $('sp-s-pl').textContent=all.length;
+    $('sp-pl-meta').textContent=`${all.length} playlists`;
+    if(!all.length){$('sp-pl').innerHTML='<div class="empty">No playlists.</div>';return;}
+    const bg=['#e8faf0','#d5f5e3','#c8f5da'];
+    $('sp-pl').innerHTML=`<div class="pl-grid">${all.map((p,i)=>{
+      const img=p.images?.[0]?.url;
+      return`<div class="pl-card" title="${esc(p.name)}">
+        ${img?`<img class="pl-thumb" src="${esc(img)}" alt=""/>`:`<div class="pl-ph" style="background:${bg[i%bg.length]}">🎵</div>`}
+        <div class="pl-name">${esc(p.name)}</div>
+        <div class="pl-meta">${p.tracks?.total??'?'} tracks${p.public===false?' · 🔒':''}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }catch(e){$('sp-pl').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── SPOTIFY GENRE PIE ──
+function spBuildGenrePie(artists){
+  const counts={};
+  artists.forEach(a=>(a.genres||[]).forEach(g=>{counts[g]=(counts[g]||0)+1;}));
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const total=sorted.reduce((s,[,c])=>s+c,0);
+  if(!total)return;
+  $('sp-s-tg').textContent=sorted[0]?.[0]||'—';
+  $('sp-genre-meta').textContent=`${sorted.length} genres`;
+  drawPie('sp-pie',sorted,total,SP_PAL,'#fff');
+  $('sp-genre-legend').innerHTML=sorted.map(([g,c],i)=>`
+    <div class="genre-row">
+      <div class="g-swatch" style="background:${SP_PAL[i%SP_PAL.length]}"></div>
+      <div class="g-label">${esc(g)}</div>
+      <div class="g-pct">${Math.round(c/total*100)}%</div>
+    </div>
+  `).join('');
+}
+
+// ── AUDIO FEATURES ──
+function spBuildFeatures(feats){
+  if(!feats.length)return;
+  const keys=['danceability','energy','valence','acousticness','instrumentalness','speechiness'];
+  const labels={danceability:'Dance',energy:'Energy',valence:'Positivity',acousticness:'Acoustic',instrumentalness:'Instrumental',speechiness:'Speech'};
+  const colors={danceability:'#1DB954',energy:'#f97316',valence:'#6366f1',acousticness:'#14b8a6',instrumentalness:'#f59e0b',speechiness:'#fc3c44'};
+  const avgs={};
+  keys.forEach(k=>{avgs[k]=feats.reduce((s,f)=>s+(f[k]||0),0)/feats.length;});
+  $('sp-feats').innerHTML=keys.map(k=>`
+    <div class="feat-row">
+      <div class="feat-name">${labels[k]}</div>
+      <div class="feat-bar"><div class="feat-fill" style="width:${Math.round(avgs[k]*100)}%;background:${colors[k]}"></div></div>
+      <div class="feat-val">${Math.round(avgs[k]*100)}%</div>
+    </div>
+  `).join('');
+}
+
+// ── DECADES ──
+function spBuildDecades(tracks){
+  const dec={};
+  tracks.forEach(t=>{const y=parseInt(t.album?.release_date?.slice(0,4)||'0');if(!y)return;const d=Math.floor(y/10)*10;dec[d]=(dec[d]||0)+1;});
+  const sorted=Object.entries(dec).sort((a,b)=>+a[0]-+b[0]);
+  const max=Math.max(...sorted.map(([,c])=>c));
+  $('sp-dec').innerHTML=sorted.map(([d,c])=>`
+    <div class="dec-row">
+      <div class="dec-label">${d}s</div>
+      <div class="dec-bg"><div class="dec-fill" style="width:${Math.round(c/max*100)}%;background:var(--sp)"></div></div>
+      <div class="dec-count">${c}</div>
+    </div>
+  `).join('');
+}
+
+// ── PIE HELPER ──
+function drawPie(canvasId,sorted,total,pal,holeFill){
+  const canvas=$(canvasId),ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,120,120);
+  let angle=-Math.PI/2;
+  sorted.forEach(([,c],i)=>{
+    const slice=(c/total)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(60,60);ctx.arc(60,60,54,angle,angle+slice);ctx.closePath();
+    ctx.fillStyle=pal[i%pal.length];ctx.fill();
+    angle+=slice;
+  });
+  ctx.beginPath();ctx.arc(60,60,24,0,Math.PI*2);ctx.fillStyle=holeFill;ctx.fill();
+}
+
+// ── APPLE MUSIC ──
+function loadMKit(){
+  return new Promise((res,rej)=>{
+    if(window.MusicKit){res();return;}
+    const s=document.createElement('script');
+    s.src='https://js-cdn.music.apple.com/musickit/v3/musickit.js';
+    s.onload=res;s.onerror=()=>rej(new Error('MusicKit load failed'));
+    document.head.appendChild(s);
+  });
+}
+
+function setApSidebarUI(s,name){
+  const card=$('sc-ap'),dot=$('dot-ap'),uEl=$('user-ap'),btn=$('btn-ap');
+  if(s==='connected'){
+    card.className='sa-card on-ap';dot.className='sa-dot ap';
+    uEl.textContent=name||'Apple Music User';
+    btn.textContent='Disconnect';btn.className='sa-btn off';btn.onclick=dcApple;btn.disabled=false;
+  }else if(s==='loading'){
+    dot.className='sa-dot';uEl.textContent='Connecting…';btn.disabled=true;btn.textContent='…';
+  }else{
+    card.className='sa-card';dot.className='sa-dot';uEl.textContent='Not connected';
+    btn.disabled=false;btn.textContent='Connect';btn.className='sa-btn ap';btn.onclick=connectApple;
+  }
+}
+
+function setApColBtn(connected){
+  const btn=$('ap-col-btn');
+  if(connected){btn.textContent='Disconnect';btn.className='ph-connect-btn ph-disconnect';btn.onclick=dcApple;}
+  else{btn.textContent='Connect';btn.className='ph-connect-btn ph-connect-ap';btn.onclick=connectApple;}
+}
+
+function dcApple(){
+  try{ST.apMusic?.unauthorize();}catch(_){}
+  ST.apMusic=null;ST.apConnected=false;
+  setApSidebarUI('disconnected');setApColBtn(false);
+  $('ap-ph-user').textContent='Not connected';
+  $('ap-connect-state').style.display='';
+  $('ap-data').style.display='none';
+}
+
+async function connectApple(){
+  setApSidebarUI('loading');
+  try{
+    await loadMKit();
+    const music=await MusicKit.configure({developerToken:CONFIG.apple.developerToken,app:{name:CONFIG.apple.appName,build:CONFIG.apple.appBuild}});
+    ST.apMusic=music;
+    await music.authorize();
+    ST.apConnected=true;
+    const name=music.me?.name||'Apple Music User';
+    setApSidebarUI('connected',name);
+    $('ap-ph-user').textContent=name;
+    setApColBtn(true);
+    $('ap-connect-state').style.display='none';
+    $('ap-data').style.display='block';
+    await Promise.all([apLoadRec(),apLoadTracks(),apLoadArtists(),apLoadAlbums(),apLoadPlaylists()]);
+  }catch(e){
+    console.error(e);setApSidebarUI('disconnected');
+  }
+}
+
+// ── APPLE: RECENTLY PLAYED ──
+async function apLoadRec(){
+  $('ap-rp').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const res=await ST.apMusic.api.music('/v1/me/recent/played/tracks',{limit:10});
+    const items=res.data?.data||[];
+    if(!items.length){$('ap-rp').innerHTML='<div class="empty">No recent tracks.</div>';return;}
+    $('ap-rp').innerHTML=items.map(t=>{
+      const art=t.attributes?.artwork;
+      const img=art?MusicKit.formatArtworkURL(art,60,60):null;
+      return`<div class="recent-item">
+        ${img?`<img class="r-cover" src="${esc(img)}" alt=""/>`:'<div class="r-cover" style="background:#f0e0e1;"></div>'}
+        <div class="r-info"><div class="r-name">${esc(t.attributes?.name||'Unknown')}</div><div class="r-artist">${esc(t.attributes?.artistName||'')}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){$('ap-rp').innerHTML=`<div class="empty">Apple Music doesn't expose play history in detail. (${esc(e.message)})</div>`;}
+}
+
+// ── APPLE: LIBRARY SONGS ──
+async function apLoadTracks(){
+  $('ap-tt').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const res=await ST.apMusic.api.music('/v1/me/library/songs',{limit:20,sort:'-dateAdded'});
+    const items=res.data?.data||[];
+    $('ap-tt-meta').textContent=`${items.length} shown`;
+    if(!items.length){$('ap-tt').innerHTML='<div class="empty">No songs in library.</div>';return;}
+    $('ap-tt').innerHTML=items.map((t,i)=>{
+      const art=t.attributes?.artwork;
+      const img=art?MusicKit.formatArtworkURL(art,68,68):null;
+      return`<div class="track-item">
+        <span class="t-rank ${i<3?'top':''}">${i+1}</span>
+        ${img?`<img class="t-cover" src="${esc(img)}" alt=""/>`:`<div class="t-ph" style="background:${AP_PAL[i%AP_PAL.length]}">${esc((t.attributes?.name||'?').charAt(0))}</div>`}
+        <div class="t-info">
+          <div class="t-name">${esc(t.attributes?.name||'Unknown')}</div>
+          <div class="t-artist">${esc(t.attributes?.artistName||'')} · ${esc(t.attributes?.albumName||'')}</div>
+        </div>
+        <div class="t-dur">${ms2min(t.attributes?.durationInMillis)}</div>
+      </div>${i<items.length-1?hr():''}`;
+    }).join('');
+
+    // Build genre pie from tracks
+    apBuildGenrePie(items);
+  }catch(e){$('ap-tt').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── APPLE: LIBRARY ARTISTS ──
+async function apLoadArtists(){
+  $('ap-ta').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const res=await ST.apMusic.api.music('/v1/me/library/artists',{limit:20});
+    const items=res.data?.data||[];
+    $('ap-s-ar').textContent=items.length;
+    $('ap-ta-meta').textContent=`${items.length} shown`;
+    if(!items.length){$('ap-ta').innerHTML='<div class="empty">No artists in library.</div>';return;}
+    $('ap-ta').innerHTML=items.map((a,i)=>{
+      const art=a.attributes?.artwork;
+      const img=art?MusicKit.formatArtworkURL(art,76,76):null;
+      return`<div class="artist-item">
+        ${img?`<img class="a-img" src="${esc(img)}" alt=""/>`:`<div class="a-ph" style="background:${AP_PAL[i%AP_PAL.length]}">${esc((a.attributes?.name||'?').charAt(0))}</div>`}
+        <div class="a-info"><div class="a-name">${esc(a.attributes?.name||'Unknown')}</div><div class="a-genres">Library artist</div></div>
+      </div>${i<items.length-1?hr():''}`;
+    }).join('');
+  }catch(e){$('ap-ta').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── APPLE: ALBUMS ──
+async function apLoadAlbums(){
+  $('ap-alb').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const res=await ST.apMusic.api.music('/v1/me/library/albums',{limit:20});
+    const items=res.data?.data||[];
+    $('ap-s-al').textContent=items.length;
+    $('ap-alb-meta').textContent=`${items.length} shown`;
+    if(!items.length){$('ap-alb').innerHTML='<div class="empty">No albums in library.</div>';return;}
+    $('ap-alb').innerHTML=items.map(a=>{
+      const art=a.attributes?.artwork;
+      const img=art?MusicKit.formatArtworkURL(art,80,80):null;
+      return`<div class="album-item">
+        ${img?`<img class="alb-cover" src="${esc(img)}" alt=""/>`:'<div class="alb-cover" style="background:#f5dde0;"></div>'}
+        <div class="alb-info">
+          <div class="alb-name">${esc(a.attributes?.name||'Unknown')}</div>
+          <div class="alb-artist">${esc(a.attributes?.artistName||'')} · ${a.attributes?.trackCount??'?'} tracks</div>
+        </div>
+        <div class="alb-year">${a.attributes?.releaseDate?.slice(0,4)||''}</div>
+      </div>${hr()}`;
+    }).join('');
+  }catch(e){$('ap-alb').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── APPLE: PLAYLISTS ──
+async function apLoadPlaylists(){
+  $('ap-pl').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    const res=await ST.apMusic.api.music('/v1/me/library/playlists',{limit:100});
+    const items=res.data?.data||[];
+    $('ap-s-pl').textContent=items.length;
+    $('ap-pl-meta').textContent=`${items.length} playlists`;
+    if(!items.length){$('ap-pl').innerHTML='<div class="empty">No playlists.</div>';return;}
+    const bg=['#fff0f0','#ffe5e5','#ffd6d6'];
+    $('ap-pl').innerHTML=`<div class="pl-grid">${items.map((p,i)=>{
+      const art=p.attributes?.artwork;
+      const img=art?MusicKit.formatArtworkURL(art,120,120):null;
+      return`<div class="pl-card" title="${esc(p.attributes?.name||'')}">
+        ${img?`<img class="pl-thumb" src="${esc(img)}" alt=""/>`:`<div class="pl-ph" style="background:${bg[i%bg.length]}">🎶</div>`}
+        <div class="pl-name">${esc(p.attributes?.name||'Playlist')}</div>
+        <div class="pl-meta">${p.attributes?.trackCount??'?'} tracks</div>
+      </div>`;
+    }).join('')}</div>`;
+  }catch(e){$('ap-pl').innerHTML=`<div class="empty">Failed: ${esc(e.message)}</div>`;}
+}
+
+// ── APPLE GENRE PIE (from track genres) ──
+function apBuildGenrePie(tracks){
+  const counts={};
+  tracks.forEach(t=>(t.attributes?.genreNames||[]).forEach(g=>{if(g!=='Music')counts[g]=(counts[g]||0)+1;}));
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const total=sorted.reduce((s,[,c])=>s+c,0);
+  if(!total){$('ap-genre-legend').innerHTML='<div class="empty" style="padding:8px 0;">No genre data.</div>';return;}
+  $('ap-genre-meta').textContent=`${sorted.length} genres`;
+  drawPie('ap-pie',sorted,total,AP_PAL,'#fff');
+  $('ap-genre-legend').innerHTML=sorted.map(([g,c],i)=>`
+    <div class="genre-row">
+      <div class="g-swatch" style="background:${AP_PAL[i%AP_PAL.length]}"></div>
+      <div class="g-label">${esc(g)}</div>
+      <div class="g-pct">${Math.round(c/total*100)}%</div>
+    </div>
+  `).join('');
+}
+
+// ── OAUTH CALLBACK ──
+async function handleCallback(){
+  const p=new URLSearchParams(window.location.search);
+  const code=p.get('code');
+  if(!code||p.get('state')!=='sp_dash')return;
+  window.history.replaceState({},'',window.location.pathname);
+  setSpSidebarUI('loading');
+  try{
+    const verifier=sessionStorage.getItem('sp_verifier');
+    const res=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:CONFIG.spotify.redirectUri,client_id:CONFIG.spotify.clientId,code_verifier:verifier})
+    });
+    if(!res.ok)throw new Error('Token exchange failed');
+    const{access_token}=await res.json();
+    sessionStorage.setItem('sp_token',access_token);
+    await setSpotifyConnected(access_token);
+  }catch(e){console.error(e);setSpSidebarUI('disconnected');}
+}
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded',async()=>{
+  await handleCallback();
+  const token=sessionStorage.getItem('sp_token');
+  if(token){
+    try{await setSpotifyConnected(token);}
+    catch{sessionStorage.removeItem('sp_token');setSpSidebarUI('disconnected');}
+  }
+  // Apple session restore
+  try{
+    await loadMKit();
+    const music=await MusicKit.configure({developerToken:CONFIG.apple.developerToken,app:{name:CONFIG.apple.appName,build:CONFIG.apple.appBuild}});
+    if(music.isAuthorized){
+      ST.apMusic=music;ST.apConnected=true;
+      const name=music.me?.name||'Apple Music User';
+      setApSidebarUI('connected',name);
+      $('ap-ph-user').textContent=name;setApColBtn(true);
+      $('ap-connect-state').style.display='none';
+      $('ap-data').style.display='block';
+      await Promise.all([apLoadRec(),apLoadTracks(),apLoadArtists(),apLoadAlbums(),apLoadPlaylists()]);
+    }
+  }catch(_){}
+});
+</script>
+</body>
+</html>

@@ -76,7 +76,7 @@ export function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-white">
-              <Image src="public/logo.png" alt="Logo" width={100} height={100} />
+              <Image src="/MM.png" alt="MusicMerge logo" width={60} height={60} />
             </Link>
           </div>
 
@@ -87,6 +87,9 @@ export function Navbar() {
             </Link>
             <Link href="/home/about" className="text-white hover:text-gray-200">
               About
+            </Link>
+            <Link href="/dash" className="text-white hover:text-gray-200">
+              Dash
             </Link>
             <Link href="/home/contact" className="text-white hover:text-gray-200">
               Contact
@@ -104,14 +107,14 @@ export function Navbar() {
                   Report/Claim Forms
                 </Link>
 
-                {/* Only show Admin if approved admin or superadmin */}
+                {/*admin*/}
                 {hasAdminAccess && (
                   <Link href="/admin/dashboard" className="text-white hover:text-gray-300 transition-colors">
                     Admin
                   </Link>
                 )}
 
-                {/* Only show App Admin if superadmin */}
+                {/*superadmin */}
                 {hasSuperAdminAccess && (
                   <Link href="/superadmin" className="text-white hover:text-gray-300 transition-colors">
                     App Admin
@@ -125,24 +128,6 @@ export function Navbar() {
                   Logout
                 </button>
               </>
-            )}
-          </div>
-
-          {/* Right side CTAs */}
-          <div>
-            <Link
-              href="/schoolfind"
-              className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200"
-            >
-              Find Your Organization
-            </Link>
-            {!isSignedIn && (
-              <Link
-                href="/login"
-                className="bg-white text-black px-4 py-2 ml-10 rounded-lg hover:bg-gray-200"
-              >
-                Log In/Sign Up
-              </Link>
             )}
           </div>
         </div>

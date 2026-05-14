@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Playlist Converter</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      color: #111;
+      min-height: 100vh;
+      padding: 40px 24px;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #555;
+      font-size: 0.9rem;
+      margin-bottom: 40px;
+    }
+
+    /* AUTH */
+    .auth-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .auth-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .auth-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .platform-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .auth-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+    .auth-status.disconnected { background: #ffe5e5; color: #c00; }
+    .auth-status.connected    { background: #e5f7ec; color: #1a7a3c; }
+    .auth-status.loading      { background: #fff4e0; color: #a06000; }
+
+    .auth-user {
+      font-size: 0.8rem;
+      color: #666;
+      margin: 6px 0 12px;
+      min-height: 1.2em;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 9px 16px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-spotify { background: #1DB954; color: #000; }
+    .btn-spotify:hover:not(:disabled) { background: #1aaa4d; }
+
+    .btn-apple { background: #fc3c44; color: #fff; }
+    .btn-apple:hover:not(:disabled) { background: #e02c34; }
+
+    .btn-default {
+      background: #f0f0f0;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+    .btn-default:hover:not(:disabled) { background: #e5e5e5; }
+
+    .btn-primary {
+      background: #111;
+      color: #fff;
+      font-size: 0.9rem;
+      padding: 12px 20px;
+    }
+    .btn-primary:hover:not(:disabled) { background: #333; }
+
+    /* DIRECTION */
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .direction-section { margin-bottom: 28px; }
+
+    .direction-toggle {
+      display: flex;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .dir-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #888;
+    }
+    .dir-btn.active { background: #f0f0f0; color: #111; }
+    .dir-btn:hover:not(.active) { background: #f9f9f9; }
+
+    /* PLAYLISTS */
+    .playlist-section { margin-bottom: 28px; }
+
+    .playlist-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .playlist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .playlist-card {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .playlist-card:hover { border-color: #aaa; background: #fafafa; }
+    .playlist-card.selected { border-color: #111; background: #f5f5f5; }
+
+    .playlist-cover {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: #eee;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .playlist-cover img { width: 100%; height: 100%; object-fit: cover; }
+
+    .playlist-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .playlist-meta { font-size: 10px; color: #888; }
+
+    .state-empty {
+      grid-column: 1 / -1;
+      padding: 32px;
+      text-align: center;
+      color: #999;
+      font-size: 0.85rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid #ddd;
+      border-top-color: #555;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* CONVERT */
+    .convert-section {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .convert-summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .summary-chip {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .summary-chip strong { color: #111; }
+
+    .progress-wrap { display: none; margin-top: 14px; }
+    .progress-wrap.visible { display: block; }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: #eee;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: #1DB954;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-label { font-size: 11px; color: #888; }
+
+    #statusMsg {
+      font-size: 0.85rem;
+      color: #555;
+      margin-top: 12px;
+      min-height: 1.4em;
+    }
+    #statusMsg.ok   { color: #1a7a3c; }
+    #statusMsg.err  { color: #c00; }
+    #statusMsg.warn { color: #a06000; }
+
+    @media (max-width: 580px) {
+      .auth-section { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Playlist Converter</h1>
+  <p class="subtitle">Connect both platforms, select a playlist, and convert.</p>
+
+  <!-- AUTH -->
+  <section class="auth-section">
+
+    <!-- Spotify -->
+    <div class="auth-card" id="spotifyCard">
+      <div class="auth-card-header">
+        <span class="platform-name">Spotify</span>
+        <span class="auth-status disconnected" id="spotifyStatus">Not connected</span>
+      </div>
+      <p class="auth-user" id="spotifyUser"></p>
+      <button class="btn btn-spotify" id="spotifyAuthBtn" onclick="spotifyLogin()">
+        Connect Spotify
+      </button>
+    </div>
+
+    <!-- Apple Music -->
+    <div class="auth-card" id="appleCard">
+      <div class="auth-card-header">
+        <span class="platform-name">Apple Music</span>
+        <span class="auth-status disconnected" id="appleStatus">Not connected</span>
+      </div>
+      <p class="auth-user" id="appleUser"></p>
+      <button class="btn btn-apple" id="appleAuthBtn" onclick="appleLogin()">
+        Connect Apple Music
+      </button>
+    </div>
+  </section>
+
+  <!-- DIRECTION -->
+  <section class="direction-section">
+    <p class="section-label">Conversion direction</p>
+    <div class="direction-toggle">
+      <button class="dir-btn active" id="dirSpotifyToApple" onclick="setDirection('spotify-to-apple')">
+        Spotify &rarr; Apple Music
+      </button>
+      <button class="dir-btn" id="dirAppleToSpotify" onclick="setDirection('apple-to-spotify')">
+        Apple Music &rarr; Spotify
+      </button>
+    </div>
+  </section>
+
+  <!-- PLAYLIST PICKER -->
+  <section class="playlist-section">
+    <div class="playlist-section-header">
+      <p class="section-label" style="margin-bottom:0">Select playlist to convert</p>
+      <button class="btn btn-default" style="width:auto;padding:6px 14px;" onclick="refreshPlaylists()">
+        Refresh
+      </button>
+    </div>
+    <div class="playlist-grid" id="playlistGrid">
+      <div class="state-empty">Connect the source platform above to load playlists.</div>
+    </div>
+  </section>
+
+  <!-- CONVERT -->
+  <section class="convert-section">
+    <div class="convert-summary">
+      <div class="summary-chip" id="chipFrom">No playlist selected</div>
+      <span style="color:#aaa">&rarr;</span>
+      <div class="summary-chip">Target: <strong id="targetPlatform">Apple Music</strong></div>
+    </div>
+    <button class="btn btn-primary" id="convertBtn" onclick="startConversion()" disabled>
+      Convert Playlist
+    </button>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <p class="progress-label" id="progressLabel">0 / 0 tracks processed</p>
+    </div>
+    <p id="statusMsg"></p>
+  </section>
+
+</div>
+
+
+<script>
+
+const CONFIG = {
+  spotify: {
+    clientId:    'a8d1a180675c42ccbead39e3f0ca87e2',        // <-- Spotify Client ID goes here
+    redirectUri: 'https://serene-quokka-169929.netlify.app', // must exactly match your Spotify dashboard redirect URI
+    scopes: [
+      'playlist-read-private',
+      'playlist-read-collaborative',
+      'playlist-modify-public',
+      'playlist-modify-private',
+      'user-read-private',
+      'user-read-email',
+      'user-library-read',        // add this
+      'user-library-modify'       // add this
+    ].join(' ')
+  },
+  apple: {
+    developerToken: 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijg2UzZCWjk1SkEifQ.eyJpYXQiOjE3Nzc5MDk4NjIsImV4cCI6MTc5MzQ2MTg2MiwiaXNzIjoiTjRBUDg2NzNLTiJ9.wk7O4VDIS4qaktpD9oP42palE2Z_7R3j7NUlG9K2Jk5SNq2-h5wZyn5j4L99gg3qoqA_1vZsTo6aIL-gNk-2IQ',
+    appName:        'StreamBridge',
+    appBuild:       '1.0'
+  }
+};
+
+
+//State
+window.state = {
+  spotify: { connected: false, token: null, user: null },
+  apple:   { connected: false, music: null, user: null },
+  direction: 'spotify-to-apple',
+  selectedPlaylist: null,
+  converting: false
+};
+
+
+//Status Message
+function setStatus(msg, type = '') {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = type;
+}
+
+
+async function generatePKCE() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  const verifier = btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return { verifier, challenge };
+}
+
+async function spotifyLogin() {
+  const { verifier, challenge } = await generatePKCE();
+  sessionStorage.setItem('spotify_pkce_verifier', verifier);
+
+  const params = new URLSearchParams({
+    response_type:         'code',
+    client_id:             CONFIG.spotify.clientId,  // your Client ID is sent here
+    scope:                 CONFIG.spotify.scopes,
+    redirect_uri:          CONFIG.spotify.redirectUri,
+    code_challenge_method: 'S256',
+    code_challenge:        challenge,
+    state:                 'spotify_oauth',
+  });
+  window.location.href = 'https://accounts.spotify.com/authorize?' + params.toString();
+}
+
+async function exchangeSpotifyCode(code) {
+  const verifier = sessionStorage.getItem('spotify_pkce_verifier');
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type:    'authorization_code',
+      code,
+      redirect_uri:  CONFIG.spotify.redirectUri,
+      client_id:     CONFIG.spotify.clientId,
+      code_verifier: verifier
+    })
+  });
+  if (!res.ok) throw new Error('Spotify token exchange failed: ' + res.status);
+  return res.json();
+}
+
+async function setSpotifyConnected(token) {
+  state.spotify.token = token;
+  state.spotify.connected = true;
+  const me = await spotifyFetch('/me');
+  state.spotify.user = me;
+
+  document.getElementById('spotifyStatus').className = 'auth-status connected';
+  document.getElementById('spotifyStatus').textContent = 'Connected';
+  document.getElementById('spotifyUser').textContent = me.display_name + ' · ' + me.email;
+  document.getElementById('spotifyAuthBtn').textContent = 'Reconnect';
+  refreshPlaylists();
+}
+
+
+//Apple Music Authentication
+function loadMusicKit() {
+  return new Promise((resolve, reject) => {
+    if (window.MusicKit) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://js-cdn.music.apple.com/musickit/v3/musickit.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load MusicKit JS'));
+    document.head.appendChild(s);
+  });
+}
+
+async function appleLogin() {
+  setAppleStatus('loading', 'Connecting...');
+  try {
+    await loadMusicKit();
+
+    const music = await MusicKit.configure({
+      developerToken: CONFIG.apple.developerToken,  // your signed JWT is passed here
+      app: { name: CONFIG.apple.appName, build: CONFIG.apple.appBuild }
+    });
+    state.apple.music = music;
+
+    await music.authorize();
+
+    state.apple.connected = true;
+    const name = music.me?.name || 'Apple User';
+    state.apple.user = { name };
+
+    document.getElementById('appleStatus').className = 'auth-status connected';
+    document.getElementById('appleStatus').textContent = 'Connected';
+    document.getElementById('appleUser').textContent = name;
+    document.getElementById('appleAuthBtn').textContent = 'Reconnect';
+    refreshPlaylists();
+  } catch (err) {
+    setAppleStatus('disconnected', 'Not connected');
+    setStatus('Apple Music auth failed: ' + err.message, 'err');
+  }
+}
+
+function setAppleStatus(cls, text) {
+  const el = document.getElementById('appleStatus');
+  el.className = 'auth-status ' + cls;
+  el.textContent = text;
+}
+
+
+//Direction
+function setDirection(dir) {
+  state.direction = dir;
+  state.selectedPlaylist = null;
+  document.getElementById('dirSpotifyToApple').classList.toggle('active', dir === 'spotify-to-apple');
+  document.getElementById('dirAppleToSpotify').classList.toggle('active', dir === 'apple-to-spotify');
+  document.getElementById('targetPlatform').textContent =
+    dir === 'spotify-to-apple' ? 'Apple Music' : 'Spotify';
+  document.getElementById('chipFrom').textContent = 'No playlist selected';
+  updateConvertBtn();
+  renderPlaylists([]);
+  refreshPlaylists();
+}
+
+
+//Playlists
+async function refreshPlaylists() {
+  const grid = document.getElementById('playlistGrid');
+  const src = state.direction === 'spotify-to-apple' ? 'spotify' : 'apple';
+
+  if (!state[src].connected) {
+    grid.innerHTML = '<div class="state-empty">Connect the source platform to load playlists.</div>';
+    return;
+  }
+
+  grid.innerHTML = '<div class="state-empty"><span class="spinner"></span> Loading...</div>';
+  try {
+    const playlists = src === 'spotify'
+      ? await fetchSpotifyPlaylists()
+      : await fetchApplePlaylists();
+    renderPlaylists(playlists);
+  } catch (err) {
+    grid.innerHTML = '<div class="state-empty">Failed to load playlists. Try reconnecting.</div>';
+    setStatus('Playlist fetch error: ' + err.message, 'err');
+  }
+}
+
+async function fetchSpotifyPlaylists() {
+  const data = await spotifyFetch('/me/playlists?limit=50');
+  return data.items
+  .filter(p => p && p.name)
+  .map(p => ({
+    id:     p.id,
+    name:   p.name,
+    tracks: p.tracks?.total ?? p.items?.total ?? '?',
+    image:  p.images?.[0]?.url || null,
+    source: 'spotify'
+  }));
+}
+
+async function fetchApplePlaylists() {
+  const music = state.apple.music;
+  const res = await music.api.music('/v1/me/library/playlists', { limit: 100 });
+  return res.data.data.map(p => ({
+    id:     p.id,
+    name:   p.attributes.name,
+    tracks: p.attributes.trackCount ?? '?',
+    image:  p.attributes.artwork
+             ? MusicKit.formatArtworkURL(p.attributes.artwork, 80, 80)
+             : null,
+    source: 'apple'
+  }));
+}
+
+function renderPlaylists(playlists) {
+  const grid = document.getElementById('playlistGrid');
+  if (!playlists.length) {
+    grid.innerHTML = '<div class="state-empty">No playlists found.</div>';
+    return;
+  }
+  grid.innerHTML = playlists.map(p => `
+    <div class="playlist-card${state.selectedPlaylist?.id === p.id ? ' selected' : ''}"
+         onclick='selectPlaylist(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+      <div class="playlist-cover">
+        ${p.image ? `<img src="${p.image}" alt="" loading="lazy"/>` : ''}
+      </div>
+      <div class="playlist-title" title="${p.name}">${p.name}</div>
+      <div class="playlist-meta">${p.tracks} tracks</div>
+    </div>
+  `).join('');
+}
+
+function selectPlaylist(playlist) {
+  state.selectedPlaylist = playlist;
+  document.querySelectorAll('.playlist-card').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('chipFrom').innerHTML =
+    `<strong>${playlist.name}</strong> &mdash; ${playlist.tracks} tracks`;
+  setStatus('');
+  updateConvertBtn();
+}
+
+
+//Converstion button
+function updateConvertBtn() {
+  const src = state.direction === 'spotify-to-apple' ? 'spotify' : 'apple';
+  const dst = state.direction === 'spotify-to-apple' ? 'apple'   : 'spotify';
+  const ready = state[src].connected &&
+                state[dst].connected &&
+                state.selectedPlaylist &&
+                !state.converting;
+  document.getElementById('convertBtn').disabled = !ready;
+}
+
+
+//Conversion Flow
+async function startConversion() {
+  if (!state.selectedPlaylist || state.converting) return;
+  state.converting = true;
+  updateConvertBtn();
+  showProgress(0, 0);
+  setStatus('Starting conversion...');
+
+  try {
+    if (state.direction === 'spotify-to-apple') {
+      await convertSpotifyToApple(state.selectedPlaylist);
+    } else {
+      await convertAppleToSpotify(state.selectedPlaylist);
+    }
+  } catch (err) {
+    setStatus('Conversion failed: ' + err.message, 'err');
+  } finally {
+    state.converting = false;
+    updateConvertBtn();
+    document.getElementById('progressWrap').classList.remove('visible');
+  }
+}
+
+async function appleFetch(path, method, body) {
+  method = method || 'GET';
+  var devToken  = CONFIG.apple.developerToken;
+  var userToken = state.apple.music.musicUserToken;
+  var opts = {
+    method: method,
+    headers: {
+      'Authorization':    'Bearer ' + devToken,
+      'Music-User-Token': userToken,
+      'Content-Type':     'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  var res = await fetch('https://api.music.apple.com' + path, opts);
+  if (!res.ok) {
+    var errBody = await res.text();
+    throw new Error(res.status + ' ' + errBody);
+  }
+  if (res.status === 204) return {};
+  return res.json();
+}
+// Spotify -> Apple Music
+async function convertSpotifyToApple(playlist) {
+  setStatus('Fetching tracks from Spotify...');
+  var tracks = await fetchAllSpotifyTracks(playlist.id);
+
+  setStatus('Creating playlist in Apple Music...');
+  var newPlaylist = await appleFetch('/v1/me/library/playlists', 'POST', {
+    attributes: { name: playlist.name }
+  });
+  var newPlaylistId = newPlaylist.data[0].id;
+
+  var matched = 0;
+  var failed  = 0;
+
+  for (var i = 0; i < tracks.length; i++) {
+    var track = tracks[i];
+    showProgress(i + 1, tracks.length);
+    setStatus('Searching: "' + track.name + '" by ' + track.artists[0].name);
+    try {
+      // Step 1: search Apple Music catalog
+      var searchRes = await appleFetch(
+  '/v1/catalog/us/search?term=' + encodeURIComponent(track.name + ' ' + track.artists[0].name) + '&types=songs&limit=1'
+);
+var song = searchRes && searchRes.results && searchRes.results.songs && searchRes.results.songs.data && searchRes.results.songs.data[0];
+
+// If not found, try searching by name only
+if (!song) {
+  var searchRes2 = await appleFetch(
+    '/v1/catalog/us/search?term=' + encodeURIComponent(track.name) + '&types=songs&limit=1'
+  );
+  song = searchRes2 && searchRes2.results && searchRes2.results.songs && searchRes2.results.songs.data && searchRes2.results.songs.data[0];
+}
+
+      if (song) {
+        // Step 2: add catalog song to user's library
+        await fetch('https://api.music.apple.com/v1/me/library?ids[songs]=' + song.id, {
+          method: 'POST',
+          headers: {
+            'Authorization':    'Bearer ' + CONFIG.apple.developerToken,
+            'Music-User-Token': state.apple.music.musicUserToken
+          }
+        });
+
+        // Step 3: wait for library to register it
+        await sleep(1000);
+
+        // Step 4: find the library ID by searching the library
+        var libRes = await appleFetch('/v1/me/library/songs?limit=1&sort=-dateAdded');
+        var libSong = libRes && libRes.data && libRes.data[0];
+
+        if (libSong) {
+          // Step 5: add to playlist using library ID and type library-songs
+          await appleFetch('/v1/me/library/playlists/' + newPlaylistId + '/tracks', 'POST', {
+            data: [{ id: libSong.id, type: 'library-songs' }]
+          });
+          matched++;
+        } else {
+          failed++;
+        }
+      } else {
+        failed++;
+      }
+    } catch (err) {
+      console.error('Track error:', track.name, err.message);
+      failed++;
+    }
+    await sleep(2000);
+  }
+
+  setStatus(
+    'Done. ' + matched + ' of ' + tracks.length + ' tracks added.' + (failed > 0 ? ' ' + failed + ' not found.' : ''),
+    matched > 0 ? 'ok' : 'warn'
+  );
+}
+
+// Apple Music -> Spotify
+async function convertAppleToSpotify(playlist) {
+  setStatus('Fetching tracks from Apple Music...');
+  const music = state.apple.music;
+  const tracksRes = await music.api.music(
+    `/v1/me/library/playlists/${playlist.id}/tracks`, { limit: 300 }
+  );
+  const tracks = tracksRes.data.data;
+
+  setStatus('Creating playlist in Spotify...');
+  const newPl = await spotifyFetch(`/users/${state.spotify.user.id}/playlists`, 'POST', {
+    name: playlist.name,
+    public: false,
+    description: 'Converted from Apple Music by StreamBridge'
+  });
+  const newPlaylistId = newPl.id;
+
+  let matched = 0, failed = 0;
+  const uris = [];
+  for (let i = 0; i < tracks.length; i++) {
+    const track = tracks[i];
+    const name   = track.attributes.name;
+    const artist = track.attributes.artistName;
+    showProgress(i + 1, tracks.length);
+    setStatus(`Searching: "${name}" by ${artist}`);
+    try {
+      const q = encodeURIComponent(`track:${name} artist:${artist}`);
+      const res = await spotifyFetch(`/search?q=${q}&type=track&limit=1`);
+      const item = res.tracks?.items?.[0];
+      if (item) {
+        uris.push(item.uri);
+        matched++;
+      } else {
+        failed++;
+      }
+    } catch (err) {
+  console.error('Track error:', track.name, err);
+  failed++;
+}
+    // Spotify only accepts 100 track URIs per request — flush every 100
+    if (uris.length === 100) {
+      await spotifyFetch(`/playlists/${newPlaylistId}/tracks`, 'POST', { uris });
+      uris.length = 0;
+    }
+    await sleep(200); // rate-limit buffer
+  }
+  if (uris.length > 0) {
+    await spotifyFetch(`/playlists/${newPlaylistId}/tracks`, 'POST', { uris });
+  }
+
+  setStatus(
+    `Done. ${matched} of ${tracks.length} tracks added.${failed > 0 ? ' ' + failed + ' not found.' : ''}`,
+    matched > 0 ? 'ok' : 'warn'
+  );
+}
+
+
+//Spotify API Helpers
+async function spotifyFetch(path, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: {
+      // The Spotify access token obtained via PKCE OAuth is attached here
+      // automatically after the user authenticates. You do not set this manually.
+      'Authorization': 'Bearer ' + state.spotify.token,
+      'Content-Type':  'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('https://api.spotify.com/v1' + path, opts);
+  if (res.status === 401) throw new Error('Spotify token expired. Please reconnect.');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'Spotify API error ' + res.status);
+  }
+  if (res.status === 200 || res.status === 201) return res.json().catch(() => ({}));
+  return {};
+}
+
+async function fetchAllSpotifyTracks(playlistId) {
+  let tracks = [], offset = 0, total = Infinity;
+  while (offset < total) {
+    const data = await spotifyFetch(
+    `/playlists/${playlistId}/items?limit=100&offset=${offset}`
+    );
+    total = data.total;
+    tracks = tracks.concat(data.items.map(i => i.item || i.track).filter(Boolean));
+    offset += 100;
+  }
+  return tracks;
+}
+
+
+// ──────────────────────────────────────────────────
+// PROGRESS BAR
+// ──────────────────────────────────────────────────
+function showProgress(current, total) {
+  document.getElementById('progressWrap').classList.add('visible');
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent =
+    `${current} / ${total} tracks processed (${pct}%)`;
+}
+
+
+// ──────────────────────────────────────────────────
+// SPOTIFY OAUTH CALLBACK HANDLER
+// ──────────────────────────────────────────────────
+async function handleOAuthCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const oauthState = params.get('state');
+  if (!code || !oauthState.startsWith('spotify_oauth')) return;
+
+  // Remove the ?code= from the URL so a refresh doesn't re-trigger this
+  window.history.replaceState({}, '', window.location.pathname);
+
+  sessionStorage.removeItem('spotify_access_token');
+
+  const btn = document.getElementById('spotifyAuthBtn');
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+  try {
+    const tokens = await exchangeSpotifyCode(code);
+    sessionStorage.setItem('spotify_access_token', tokens.access_token);
+    await setSpotifyConnected(tokens.access_token);
+  } catch (err) {
+    setStatus('Spotify connection failed: ' + err.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Connect Spotify';
+  }
+}
+
+
+//Session Restore
+async function restoreSession() {
+  const token = sessionStorage.getItem('spotify_access_token');
+  if (token) {
+    try {
+      await setSpotifyConnected(token);
+    } catch {
+      sessionStorage.removeItem('spotify_access_token');
+    }
+  }
+}
+
+
+//Utilies
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+
+//Init
+window.addEventListener('DOMContentLoaded', async () => {
+  await restoreSession();
+  await handleOAuthCallback();
+});
+
+</script>
+</body>
+</html>

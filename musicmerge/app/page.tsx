@@ -2,12 +2,12 @@
 import Link from "next/link";
 
 const platforms = [
-  { name: "Spotify", bg: "bg-[#1DB954]", letter: "S" },
-  { name: "Apple Music", bg: "bg-[#fc3c44]", letter: "A" },
-  { name: "Amazon Music", bg: "bg-[#00A8E1]", letter: "Am" },
-  { name: "YouTube Music", bg: "bg-[#FF0000]", letter: "Y" },
-  { name: "Tidal", bg: "bg-[#000000] border border-white/20", letter: "T" },
-  { name: "Deezer", bg: "bg-[#A238FF]", letter: "D" },
+  { name: "Spotify", icon: "/icons/spotify.png", bg: "bg-[#1DB954]" },
+  { name: "Apple Music", icon: "/icons/apple.png", bg: "bg-[#fc3c44]" },
+  { name: "Amazon Music", icon: "/icons/amazon.png", bg: "bg-[#00A8E1]" },
+  { name: "Pandora", icon: "/icons/pandora.png", bg: "bg-[#0078D4]" },
+  { name: "YouTube Music", icon: "/icons/youtube.png", bg: "bg-[#FF0000]" },
+  { name: "SoundCloud", icon: "/icons/soundcloud.jpg", bg: "bg-[#FF5500]" },
 ];
 
 export default function HomePage() {
@@ -39,18 +39,26 @@ export default function HomePage() {
       </section>
 
       {/* Platforms */}
-      <section className="px-6 pb-24">
-        <h2 className="text-center text-2xl font-bold text-gray-300 mb-10">
+      <section className="flex flex-col items-center text-center px-6 pb-24">
+        <h2 className="text-2xl font-bold text-gray-300 mb-4">
           Platforms We Support
         </h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
-          {platforms.map((p) => (
+        <p className="text-gray-400 text-lg max-w-2xl mb-8">
+          We support Amazon, Pandora, Spotify, Apple Music, YouTube, SoundCloud, and
+          background music sources for easy playlist transfer.
+        </p>
+        <div className="flex flex-wrap justify-center gap-4">
+          {platforms.map((platform) => (
             <div
-              key={p.name}
-              className={`${p.bg} aspect-square rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg`}
-              title={p.name}
+              key={platform.name}
+              className={`${platform.bg} w-14 h-14 rounded-xl flex items-center justify-center shadow-lg`}
+              title={platform.name}
             >
-              {p.letter}
+              <img
+                src={platform.icon}
+                alt={platform.name}
+                className="w-8 h-8 object-contain"
+              />
             </div>
           ))}
         </div>

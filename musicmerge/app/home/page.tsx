@@ -13,7 +13,7 @@ const platforms = [
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Hero card :D */}
+      {/* Hero card */}
       <section className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center gap-6">
         <p className="text-sm tracking-[0.3em] uppercase text-green-400 font-mono">
           Music Transfer Platform
@@ -37,15 +37,15 @@ export default function HomePage() {
       </section>
 
       {/* Platforms */}
-      <section className="px-6 pb-24">
-        <h2 className="text-center text-2xl font-bold text-gray-300 mb-10">
+      <section className="px-6 pb-24 text-center">
+        <h2 className="text-2xl font-bold text-gray-300 mb-8">
           Platforms We Support
         </h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-3xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-3 max-w-sm mx-auto">
           {platforms.map((p) => (
             <div
               key={p.name}
-              className={`${p.bg} aspect-square rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg`}
+              className={`${p.bg} w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md`}
               title={p.name}
             >
               {p.letter}

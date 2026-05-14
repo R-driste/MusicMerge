@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { firebaseAuth } from "@/lib/firebaseClient";
 
 const platforms = [
-  { id: "spotify", name: "Spotify", bg: "bg-[#1DB954]", letter: "S" },
-  { id: "apple", name: "Apple Music", bg: "bg-[#fc3c44]", letter: "A" },
-  { id: "amazon", name: "Amazon Music", bg: "bg-[#00A8E1]", letter: "Am" },
-  { id: "youtube", name: "YouTube Music", bg: "bg-[#FF0000]", letter: "Y" },
-  { id: "tidal", name: "Tidal", bg: "bg-[#111] border border-white/20", letter: "T" },
-  { id: "deezer", name: "Deezer", bg: "bg-[#A238FF]", letter: "D" },
+  { id: "spotify", name: "Spotify", icon: "/icons/spotify.png", bg: "bg-[#1DB954]" },
+  { id: "apple", name: "Apple Music", icon: "/icons/apple.png", bg: "bg-[#fc3c44]" },
+  { id: "amazon", name: "Amazon Music", icon: "/icons/amazon.png", bg: "bg-[#00A8E1]" },
+  { id: "pandora", name: "Pandora", icon: "/icons/pandora.png", bg: "bg-[#0078D4]" },
+  { id: "youtube", name: "YouTube Music", icon: "/icons/youtube.png", bg: "bg-[#FF0000]" },
+  { id: "soundcloud", name: "SoundCloud", icon: "/icons/soundcloud.jpg", bg: "bg-[#FF5500]" },
 ];
 
 export default function DashboardPage() {
@@ -73,14 +73,18 @@ export default function DashboardPage() {
                 disabled={isDisabled}
                 className={`
                   ${p.bg} aspect-square rounded-2xl flex items-center justify-center
-                  text-white text-3xl font-black shadow-lg transition-all
+                  text-white shadow-lg transition-all
                   ${isSource ? "ring-4 ring-white scale-105" : ""}
                   ${isTarget ? "ring-4 ring-green-400 scale-105" : ""}
                   ${isDisabled ? "opacity-30 cursor-not-allowed" : "hover:scale-105 hover:brightness-110"}
                 `}
                 title={p.name}
               >
-                {p.letter}
+                <img
+                  src={p.icon}
+                  alt={p.name}
+                  className="w-12 h-12 object-contain"
+                />
               </button>
             );
           })}

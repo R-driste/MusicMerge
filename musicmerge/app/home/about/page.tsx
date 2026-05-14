@@ -18,7 +18,7 @@ const team = [
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white px-6 py-20">
+    <main className="min-h-screen bg-gradient-to-b from-black to-[#2a2a2a] text-white px-6 py-20">
       <div className="max-w-4xl mx-auto space-y-24">
 
         {/* Mission */}
@@ -26,41 +26,45 @@ export default function AboutPage() {
           <h1 className="text-5xl font-black mb-6 text-white">Our Mission</h1>
           <p className="text-gray-400 text-lg leading-relaxed max-w-2xl">
             Provide a service that allows users to keep up with the rapid changes
-            across all platforms. They should be able to move music across all
-            platforms easily and maintain all of their playlists. We hope to
-            become the go-to solution for all music lovers.
+            across a <span className="text-green-400">wide variety</span>{" "}
+            of platforms. They should be able to <span className="text-green-400">seamlessly move music</span>{" "}
+            across providers and maintain their playlists in one place. We hope to
+            become a <span className="text-green-400">go-to solution</span> for hardcore music lovers.
           </p>
         </section>
 
         {/* Team */}
-        <section>
+        <section className="flex flex-col items-end text-right">
           <h2 className="text-4xl font-black mb-10 text-white">About the Crew</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8 w-full">
             {team.map((member) => (
               <div
                 key={member.name}
-                className="bg-[#1a1a1a] rounded-2xl p-6 flex flex-col items-center gap-3 border border-white/5"
+                className="bg-white/5 rounded-2xl p-6 flex flex-col items-center gap-3 border border-white/10"
               >
-                <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center text-green-400 text-2xl font-bold">
+                <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white text-xl font-bold">
                   {member.name[0]}
                 </div>
-                <p className="font-bold text-white">{member.name}</p>
+                <p className="font-semibold text-white">{member.name}</p>
                 <p className="text-sm text-gray-500">{member.role}</p>
               </div>
             ))}
           </div>
+          <p className="text-gray-400 text-lg leading-relaxed max-w-2xl">
+            We are a team of high school developers with the dream of one day creating something that will be impactful across the world. What starts with music hopefully will lead to something that can make the lives of people easier in so many different fields.
+          </p>
         </section>
 
         {/* Platforms */}
-        <section>
-          <h2 className="text-4xl font-black mb-10 text-white">
+        <section className="flex flex-col items-center text-center">
+          <h2 className="text-4xl font-black mb-8 text-white">
             Platforms We Support
           </h2>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             {platforms.map((p) => (
               <div
                 key={p.name}
-                className={`${p.bg} aspect-square rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg`}
+                className={`${p.bg} w-14 h-14 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-md`}
                 title={p.name}
               >
                 {p.letter}
@@ -68,6 +72,7 @@ export default function AboutPage() {
             ))}
           </div>
         </section>
+
       </div>
     </main>
   );
